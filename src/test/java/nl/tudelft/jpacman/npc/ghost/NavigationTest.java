@@ -1,13 +1,19 @@
 package nl.tudelft.jpacman.npc.ghost;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 
+import com.dynatrace.openkit.api.OpenKit;
+import com.dynatrace.openkit.api.Session;
+import nl.tudelft.jpacman.OpenKitConfiguration;
 import nl.tudelft.jpacman.board.Board;
 import nl.tudelft.jpacman.board.BoardFactory;
 import nl.tudelft.jpacman.board.Direction;
@@ -42,8 +48,11 @@ class NavigationTest {
     @BeforeEach
     void setUp() {
         PacManSprites sprites = new PacManSprites();
+        OpenKit openKit = mock(OpenKit.class);
+        Session sessionMock = mock(Session.class);
+        when(openKit.createSession(anyString())).thenReturn(sessionMock);
         parser = new MapParser(new LevelFactory(sprites, new GhostFactory(
-            sprites)), new BoardFactory(sprites));
+            sprites)), new BoardFactory(sprites), Optional.empty());
     }
 
     /**

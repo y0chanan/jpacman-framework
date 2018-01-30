@@ -2,10 +2,15 @@ package nl.tudelft.jpacman.level;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.dynatrace.openkit.api.OpenKit;
+import com.dynatrace.openkit.api.RootAction;
+import com.dynatrace.openkit.api.Session;
 import nl.tudelft.jpacman.board.Board;
 import nl.tudelft.jpacman.board.Square;
 import nl.tudelft.jpacman.npc.NPC;
@@ -13,6 +18,8 @@ import nl.tudelft.jpacman.npc.NPC;
 import com.google.common.collect.Lists;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
 
 /**
  * Tests various aspects of level.
@@ -53,6 +60,10 @@ class LevelTest {
      */
     private final CollisionMap collisions = mock(CollisionMap.class);
 
+    private final OpenKit mockOpenKit = mock(OpenKit.class);
+    private final Session mockSession = mock(Session.class);
+    private final RootAction mockAction = mock(RootAction.class);
+
     /**
      * Sets up the level with the default board, a single NPC and a starting
      * square.
@@ -60,8 +71,11 @@ class LevelTest {
     @BeforeEach
     void setUp() {
         final long defaultInterval = 100L;
+        when(mockOpenKit.createSession(anyString())).thenReturn(mockSession);
+        when(mockSession.enterAction(anyString())).thenReturn(mockAction);
+        when(mockAction.reportEvent(anyString())).thenReturn(mockAction);
         level = new Level(board, Lists.newArrayList(ghost), Lists.newArrayList(
-            square1, square2), collisions);
+            square1, square2), collisions, Optional.of(mockOpenKit));
         when(ghost.getInterval()).thenReturn(defaultInterval);
     }
 

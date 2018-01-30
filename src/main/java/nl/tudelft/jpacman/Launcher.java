@@ -2,8 +2,15 @@ package nl.tudelft.jpacman;
 
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.security.CodeSource;
 import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 
+import com.dynatrace.openkit.DynatraceOpenKitBuilder;
+import com.dynatrace.openkit.api.OpenKit;
 import nl.tudelft.jpacman.board.BoardFactory;
 import nl.tudelft.jpacman.board.Direction;
 import nl.tudelft.jpacman.game.Game;
@@ -74,9 +81,9 @@ public class Launcher {
      * @return a new Game.
      */
     @EnsuresNonNull("game")
-    public Game makeGame() {
+    public Game makeGame(Optional<OpenKit> openKit) {
         GameFactory gf = getGameFactory();
-        Level level = makeLevel();
+        Level level = makeLevel(openKit);
         game = gf.createSinglePlayerGame(level);
         return game;
     }
@@ -87,9 +94,9 @@ public class Launcher {
      *
      * @return A new level.
      */
-    public Level makeLevel() {
+    public Level makeLevel(Optional<OpenKit> openKit) {
         try {
-            return getMapParser().parseMap(getLevelMap());
+            return getMapParser(openKit).parseMap(getLevelMap());
         } catch (IOException e) {
             throw new PacmanConfigurationException(
                     "Unable to create level, name = " + getLevelMap(), e);
@@ -100,8 +107,8 @@ public class Launcher {
      * @return A new map parser object using the factories from
      *         {@link #getLevelFactory()} and {@link #getBoardFactory()}.
      */
-    protected MapParser getMapParser() {
-        return new MapParser(getLevelFactory(), getBoardFactory());
+    protected MapParser getMapParser(Optional<OpenKit> openKit) {
+        return new MapParser(getLevelFactory(), getBoardFactory(), openKit);
     }
 
     /**
@@ -149,6 +156,23 @@ public class Launcher {
     }
 
     /**
+     * Create a new OpenKit instance from the given configuration parameters
+     * @param configuration OpenKit instance
+     */
+    protected OpenKit getOpenKit(OpenKitConfiguration configuration)
+    {
+        OpenKit openKit = new DynatraceOpenKitBuilder(
+            configuration.getBeaconURL(),
+            configuration.getApplicationID(),
+            configuration.getDeviceID())
+            .withApplicationName("Pacman JAVA")
+            .withApplicationVersion("7.0.0")
+            .build();
+
+        return openKit;
+    }
+
+    /**
      * Adds key events UP, DOWN, LEFT and RIGHT to a game.
      *
      * @param builder
@@ -180,8 +204,14 @@ public class Launcher {
      * Creates and starts a JPac-Man game.
      */
     @EnsuresNonNull("game")
-    public void launch() {
-        makeGame();
+    public void launch(OpenKitConfiguration configuration) {
+        Optional<OpenKit> openKit = Optional.empty();
+        if(configuration.isValid()) {
+            openKit = Optional.of(getOpenKit(configuration));
+        }
+
+        makeGame(openKit);
+
         PacManUiBuilder builder = new PacManUiBuilder().withDefaultButtons();
         addSinglePlayerKeys(builder);
         pacManUI = builder.build(getGame());
@@ -207,7 +237,49 @@ public class Launcher {
      * @throws IOException
      *             When a resource could not be read.
      */
-    public static void main(String[] args) throws IOException {
-        new Launcher().launch();
+    public static void main(String[] args) {
+
+        String endpointURL = "";
+        String applicationID = "";
+        long deviceID = 0;
+        try {
+            CodeSource source = Launcher.class.getProtectionDomain().getCodeSource();
+            if(source!= null) {
+                URL propertiesFile = new URL(source.getLocation(), "dynatrace.properties");
+
+
+                Properties properties = new Properties();
+                InputStream in = propertiesFile.openStream();
+                properties.load(in);
+                in.close();
+
+                String prop = properties.getProperty("beacon_url");
+                if (prop != null && !prop.isEmpty()) {
+                    endpointURL = prop;
+                }
+
+                prop = properties.getProperty("application_id");
+                if (prop != null && !prop.isEmpty()) {
+                    applicationID = prop;
+                }
+
+                prop = properties.getProperty("device_id");
+                if (prop != null && !prop.isEmpty()) {
+                    deviceID = Long.parseLong(prop);
+                }
+            }
+
+        }
+        catch(Exception e) {
+            System.err.println("dynatrace.properties file not found in classpath");
+        }
+
+        System.out.println("got endpoint URL " + endpointURL);
+        System.out.println("got application ID " + applicationID);
+        System.out.println("got device ID " + deviceID);
+
+        OpenKitConfiguration openKitConfig = new OpenKitConfiguration(endpointURL, applicationID, deviceID);
+
+        new Launcher().launch(openKitConfig);
     }
 }

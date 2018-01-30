@@ -1,16 +1,14 @@
 package nl.tudelft.jpacman.level;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.dynatrace.openkit.api.Action;
+import com.dynatrace.openkit.api.OpenKit;
+import com.dynatrace.openkit.api.Session;
 import nl.tudelft.jpacman.board.Board;
 import nl.tudelft.jpacman.board.Direction;
 import nl.tudelft.jpacman.board.Square;
@@ -47,6 +45,10 @@ public class Level {
      * The NPCs of this level and, if they are running, their schedules.
      */
     private final Map<NPC, @Nullable ScheduledExecutorService> npcs;
+
+    private final Optional<OpenKit> openKit;
+    private Optional<Session> openKitSession;
+    private final Map<String, Action> actions;
 
     /**
      * <code>true</code> iff this level is currently in progress, i.e. players
@@ -90,9 +92,11 @@ public class Level {
      *            The squares on which players start on this board.
      * @param collisionMap
      *            The collection of collisions that should be handled.
+     * @param openKit
+     *            The OpenKit instance to monitor the application, can be null
      */
     public Level(Board board, List<NPC> ghosts, List<Square> startPositions,
-                 CollisionMap collisionMap) {
+                 CollisionMap collisionMap, Optional<OpenKit> openKit) {
         assert board != null;
         assert ghosts != null;
         assert startPositions != null;
@@ -108,6 +112,17 @@ public class Level {
         this.players = new ArrayList<>();
         this.collisions = collisionMap;
         this.observers = new HashSet<>();
+        this.actions = new HashMap<>();
+
+        this.openKit = openKit;
+        this.openKitSession = Optional.empty();
+        if(openKit.isPresent()) {
+            openKitSession = Optional.of(openKit.get().createSession("pacman-game"));
+            if(openKitSession.isPresent()) {
+                Action moveAction = openKitSession.get().enterAction("move");
+                actions.put("move", moveAction);
+            }
+        }
     }
 
     /**
@@ -150,6 +165,11 @@ public class Level {
         player.occupy(square);
         startSquareIndex++;
         startSquareIndex %= startSquares.size();
+
+        if(openKitSession.isPresent()) {
+            openKitSession.get().identifyUser(player.toString());
+        }
+
     }
 
     /**
@@ -192,6 +212,13 @@ public class Level {
                 }
             }
             updateObservers();
+
+            if(openKitSession.isPresent()) {
+                Action moveAction = openKitSession.get().enterAction("move");
+                moveAction.reportValue("direction-x", direction.getDeltaX())
+                          .reportValue("direction-y", direction.getDeltaY());
+                moveAction.leaveAction();
+            }
         }
     }
 
@@ -207,6 +234,11 @@ public class Level {
             startNPCs();
             inProgress = true;
             updateObservers();
+
+            if(openKitSession.isPresent()) {
+                Action a = openKitSession.get().enterAction("start game");
+                a.leaveAction();
+            }
         }
     }
 
@@ -221,6 +253,11 @@ public class Level {
             }
             stopNPCs();
             inProgress = false;
+            if(openKitSession.isPresent()) {
+                Action a = openKitSession.get().enterAction("end game").reportEvent("game ended");
+                a.leaveAction();
+                openKitSession.get().end();
+            }
         }
     }
 

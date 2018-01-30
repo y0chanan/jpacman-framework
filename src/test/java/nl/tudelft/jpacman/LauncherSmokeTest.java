@@ -9,6 +9,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 /**
  * Smoke test launching the full game,
  * and attempting to make a number of typical moves.
@@ -34,7 +36,7 @@ public class LauncherSmokeTest {
     @BeforeEach
     void setUpPacman() {
         launcher = new Launcher();
-        launcher.launch();
+        launcher.launch(new OpenKitConfiguration());
     }
 
     /**

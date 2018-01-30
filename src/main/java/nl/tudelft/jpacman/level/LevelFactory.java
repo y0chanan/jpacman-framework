@@ -2,7 +2,9 @@ package nl.tudelft.jpacman.level;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import com.dynatrace.openkit.api.OpenKit;
 import nl.tudelft.jpacman.board.Board;
 import nl.tudelft.jpacman.board.Direction;
 import nl.tudelft.jpacman.board.Square;
@@ -70,15 +72,18 @@ public class LevelFactory {
      *            A list of all ghosts on the board.
      * @param startPositions
      *            A list of squares from which players may start the game.
+     * @param openKit
+     *            OpenKit instance used to monitor application. Can be Optional.empty()
      * @return A new level for the board.
      */
     public Level createLevel(Board board, List<NPC> ghosts,
-                             List<Square> startPositions) {
+                             List<Square> startPositions,
+                             Optional<OpenKit> openKit) {
 
         // We'll adopt the simple collision map for now.
         CollisionMap collisionMap = new PlayerCollisions();
 
-        return new Level(board, ghosts, startPositions, collisionMap);
+        return new Level(board, ghosts, startPositions, collisionMap, openKit);
     }
 
     /**
