@@ -169,6 +169,12 @@
 			<version>${checkerframework.plugin.version}</version>
 		</dependency>
 
+        <dependency>
+            <groupId>com.dynatrace</groupId>
+            <artifactId>openkit-java</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+
 	</dependencies>
 
 	<build>
