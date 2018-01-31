@@ -136,7 +136,7 @@ public class LevelFactory {
          *            The sprite for the ghost.
          */
         RandomGhost(Map<Direction, Sprite> ghostSprite) {
-            super(ghostSprite, (int) DELAY, 0);
+            super(ghostSprite, (int) DELAY, 0, "RandomizedGhost");
         }
 
         @Override

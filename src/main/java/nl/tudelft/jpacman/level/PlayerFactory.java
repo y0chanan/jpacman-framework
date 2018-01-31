@@ -27,10 +27,12 @@ public class PlayerFactory {
     /**
      * Creates a new player with the classic Pac-Man sprites.
      *
+     *  @param id the player's name
+     *
      * @return A new player.
      */
-    public Player createPacMan() {
-        return new Player(getSprites().getPacmanSprites(), getSprites().getPacManDeathAnimation());
+    public Player createPacMan(String id) {
+        return new Player(getSprites().getPacmanSprites(), getSprites().getPacManDeathAnimation(), id);
     }
 
     /**

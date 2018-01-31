@@ -43,7 +43,8 @@ public abstract class Ghost extends NPC {
      * @param intervalVariation
      *            The variation of the interval.
      */
-    protected Ghost(Map<Direction, Sprite> spriteMap, int moveInterval, int intervalVariation) {
+    protected Ghost(Map<Direction, Sprite> spriteMap, int moveInterval, int intervalVariation, String id) {
+        super(id);
         this.sprites = spriteMap;
         this.intervalVariation = intervalVariation;
         this.moveInterval = moveInterval;

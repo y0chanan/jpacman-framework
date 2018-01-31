@@ -30,10 +30,12 @@ public class GameFactory {
      *
      * @param level
      *            The level to create a game for.
+     * @param playerId
+     *            The player's name
      * @return A new single player game.
      */
-    public Game createSinglePlayerGame(Level level) {
-        return new SinglePlayerGame(playerFactory.createPacMan(), level);
+    public Game createSinglePlayerGame(Level level, String playerId) {
+        return new SinglePlayerGame(playerFactory.createPacMan(playerId), level);
     }
 
     /**

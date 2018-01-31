@@ -36,7 +36,7 @@ public class LauncherSmokeTest {
     @BeforeEach
     void setUpPacman() {
         launcher = new Launcher();
-        launcher.launch(new OpenKitConfiguration());
+        launcher.launch(new OpenKitConfiguration(), "");
     }
 
     /**

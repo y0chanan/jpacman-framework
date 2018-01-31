@@ -11,6 +11,16 @@ import org.checkerframework.checker.nullness.qual.Nullable;
  */
 public abstract class NPC extends Unit {
 
+    public NPC()
+    {
+        super("");
+    }
+
+    public NPC(String id)
+    {
+        super(id);
+    }
+
     /**
      * The time that should be taken between moves.
      *

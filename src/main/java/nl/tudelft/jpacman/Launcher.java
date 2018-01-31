@@ -78,13 +78,17 @@ public class Launcher {
     /**
      * Creates a new game using the level from {@link #makeLevel()}.
      *
+     * @param openKit
+     *              Open Kit instance to monitor the application
+     * @param playerId
+     *              The player's name
      * @return a new Game.
      */
     @EnsuresNonNull("game")
-    public Game makeGame(Optional<OpenKit> openKit) {
+    public Game makeGame(Optional<OpenKit> openKit, String playerId) {
         GameFactory gf = getGameFactory();
         Level level = makeLevel(openKit);
-        game = gf.createSinglePlayerGame(level);
+        game = gf.createSinglePlayerGame(level, playerId);
         return game;
     }
 
@@ -202,15 +206,21 @@ public class Launcher {
 
     /**
      * Creates and starts a JPac-Man game.
+     *
+     * @param configuration
+     *                  OpenKit configuration to use
+     * @param playerId
+     *                  The player's name
+     *
      */
     @EnsuresNonNull("game")
-    public void launch(OpenKitConfiguration configuration) {
+    public void launch(OpenKitConfiguration configuration, String playerId) {
         Optional<OpenKit> openKit = Optional.empty();
         if(configuration.isValid()) {
             openKit = Optional.of(getOpenKit(configuration));
         }
 
-        makeGame(openKit);
+        makeGame(openKit, playerId);
 
         PacManUiBuilder builder = new PacManUiBuilder().withDefaultButtons();
         addSinglePlayerKeys(builder);
@@ -280,6 +290,6 @@ public class Launcher {
 
         OpenKitConfiguration openKitConfig = new OpenKitConfiguration(endpointURL, applicationID, deviceID);
 
-        new Launcher().launch(openKitConfig);
+        new Launcher().launch(openKitConfig, "player");
     }
 }

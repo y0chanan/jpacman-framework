@@ -23,7 +23,7 @@ class OccupantTest {
      */
     @BeforeEach
     void setUp() {
-        unit = new BasicUnit();
+        unit = new BasicUnit("");
     }
 
     /**

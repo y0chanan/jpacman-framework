@@ -20,11 +20,15 @@ public abstract class Unit {
      */
     private Direction direction;
 
+    private String id;
+
     /**
      * Creates a unit that is facing east.
      */
-    protected Unit() {
+    protected Unit(String id)
+    {
         this.direction = Direction.EAST;
+        this.id = id;
     }
 
     /**
@@ -42,6 +46,17 @@ public abstract class Unit {
     public Direction getDirection() {
         return this.direction;
     }
+
+    protected void setId(String id)
+    {
+        this.id = id;
+    }
+
+    public String getID()
+    {
+        return this.id;
+    }
+
 
     /**
      * Returns the square this unit is currently occupying.

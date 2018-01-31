@@ -36,7 +36,7 @@ public class StartupSteps {
     @Given("^the user has launched the JPacman GUI$")
     public void theUserHasLaunchedTheJPacmanGUI() {
         launcher = new Launcher();
-        launcher.launch(new OpenKitConfiguration());
+        launcher.launch(new OpenKitConfiguration(), "");
     }
 
     /**

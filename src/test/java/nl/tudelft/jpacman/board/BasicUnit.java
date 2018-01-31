@@ -12,8 +12,8 @@ class BasicUnit extends Unit {
     /**
      * Creates a new basic unit.
      */
-    BasicUnit() {
-        super();
+    BasicUnit(String id) {
+        super(id);
     }
 
     @Override

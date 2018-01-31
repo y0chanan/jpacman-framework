@@ -61,7 +61,7 @@ public class Blinky extends Ghost {
     // TODO Blinky should speed up when there are a few pellets left, but he
     // has no way to find out how many there are.
     public Blinky(Map<Direction, Sprite> spriteMap) {
-        super(spriteMap, MOVE_INTERVAL, INTERVAL_VARIATION);
+        super(spriteMap, MOVE_INTERVAL, INTERVAL_VARIATION, "Blinky");
     }
 
     /**

@@ -47,8 +47,7 @@ public class Level {
     private final Map<NPC, @Nullable ScheduledExecutorService> npcs;
 
     private final Optional<OpenKit> openKit;
-    private Optional<Session> openKitSession;
-    private final Map<String, Action> actions;
+    private Map<String, Session> sessions;
 
     /**
      * <code>true</code> iff this level is currently in progress, i.e. players
@@ -93,7 +92,7 @@ public class Level {
      * @param collisionMap
      *            The collection of collisions that should be handled.
      * @param openKit
-     *            The OpenKit instance to monitor the application, can be null
+     *            The OpenKit instance to monitor the application, can be Optional.empty()
      */
     public Level(Board board, List<NPC> ghosts, List<Square> startPositions,
                  CollisionMap collisionMap, Optional<OpenKit> openKit) {
@@ -101,28 +100,35 @@ public class Level {
         assert ghosts != null;
         assert startPositions != null;
 
+        this.openKit = openKit;
+        this.sessions = new HashMap<>();
+
+        if(openKit.isPresent()) {
+            Session gameSession = openKit.get().createSession("");
+            sessions.put("game", gameSession);
+
+            Session playerSession = openKit.get().createSession("");
+            sessions.put("player", playerSession);
+        }
+
         this.board = board;
         this.inProgress = false;
         this.npcs = new HashMap<>();
         for (NPC ghost : ghosts) {
             npcs.put(ghost, null);
+            if(openKit.isPresent()) {
+                String id = "npc-" + ghost.getID();
+                Session npcSession = openKit.get().createSession("");
+                sessions.put(id, npcSession);
+
+                npcSession.identifyUser(id);
+            }
         }
         this.startSquares = startPositions;
         this.startSquareIndex = 0;
         this.players = new ArrayList<>();
         this.collisions = collisionMap;
         this.observers = new HashSet<>();
-        this.actions = new HashMap<>();
-
-        this.openKit = openKit;
-        this.openKitSession = Optional.empty();
-        if(openKit.isPresent()) {
-            openKitSession = Optional.of(openKit.get().createSession("pacman-game"));
-            if(openKitSession.isPresent()) {
-                Action moveAction = openKitSession.get().enterAction("move");
-                actions.put("move", moveAction);
-            }
-        }
     }
 
     /**
@@ -166,8 +172,9 @@ public class Level {
         startSquareIndex++;
         startSquareIndex %= startSquares.size();
 
-        if(openKitSession.isPresent()) {
-            openKitSession.get().identifyUser(player.toString());
+        Session playerSession = sessions.get("player");
+        if(playerSession != null) {
+            playerSession.identifyUser(player.toString());
         }
 
     }
@@ -213,11 +220,15 @@ public class Level {
             }
             updateObservers();
 
-            if(openKitSession.isPresent()) {
-                Action moveAction = openKitSession.get().enterAction("move");
-                moveAction.reportValue("direction-x", direction.getDeltaX())
-                          .reportValue("direction-y", direction.getDeltaY());
-                moveAction.leaveAction();
+            Session playerSession = sessions.get("player");
+            if(playerSession != null) {
+                Action moveAction = playerSession.enterAction("movement");
+
+                if(moveAction != null) {
+                    moveAction.reportValue("direction-x", direction.getDeltaX())
+                              .reportValue("direction-y", direction.getDeltaY())
+                              .leaveAction();
+                }
             }
         }
     }
@@ -235,8 +246,9 @@ public class Level {
             inProgress = true;
             updateObservers();
 
-            if(openKitSession.isPresent()) {
-                Action a = openKitSession.get().enterAction("start game");
+            Session gameSession = sessions.get("game");
+            if(gameSession != null) {
+                Action a = gameSession.enterAction("gameplay").reportEvent("start game");
                 a.leaveAction();
             }
         }
@@ -253,11 +265,6 @@ public class Level {
             }
             stopNPCs();
             inProgress = false;
-            if(openKitSession.isPresent()) {
-                Action a = openKitSession.get().enterAction("end game").reportEvent("game ended");
-                a.leaveAction();
-                openKitSession.get().end();
-            }
         }
     }
 
@@ -268,7 +275,14 @@ public class Level {
         for (final NPC npc : npcs.keySet()) {
             ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
-            service.schedule(new NpcMoveTask(service, npc),
+            String npcId = "npc-" + npc.getID();
+            Optional<Session> session = Optional.empty();
+            Session npcSession = sessions.get(npcId);
+            if(npcSession != null)
+            {
+                session = Optional.of(npcSession);
+            }
+            service.schedule(new NpcMoveTask(service, npc, session),
                 npc.getInterval() / 2, TimeUnit.MILLISECONDS);
 
             npcs.put(npc, service);
@@ -298,17 +312,48 @@ public class Level {
     }
 
     /**
+     * Report the level result to OpenKit
+     * @param type message with the event when the game ended
+     */
+    void reportGameEnd(String type){
+
+        int currentScore = -1;
+        if(players.size() > 0 && players.get(0) != null) {
+            currentScore = players.get(0).getScore();//currently there is only SinglePlayerGame
+        }
+
+        Session gameSession = sessions.get("game");
+        if(gameSession != null) {
+            Action a = gameSession.enterAction("gameplay")
+                                  .reportEvent(type)
+                                  .reportValue("score", currentScore)
+                                  .leaveAction();
+        }
+
+        for(final Session session : sessions.values())
+        {
+            session.end();
+        }
+        sessions.clear();
+    }
+
+
+    /**
      * Updates the observers about the state of this level.
      */
     private void updateObservers() {
         if (!isAnyPlayerAlive()) {
             for (LevelObserver observer : observers) {
                 observer.levelLost();
+
+                reportGameEnd("level lost");
             }
         }
         if (remainingPellets() == 0) {
             for (LevelObserver observer : observers) {
                 observer.levelWon();
+
+                reportGameEnd("level won");
             }
         }
     }
@@ -368,16 +413,24 @@ public class Level {
         private final NPC npc;
 
         /**
+         * OpenKit session
+         */
+        private final Optional<Session> session;
+
+        /**
          * Creates a new task.
          *
          * @param service
          *            The service that executes the task.
          * @param npc
          *            The NPC to move.
+         * @param session
+         *            OpenKit session to monitor npc behavior
          */
-        NpcMoveTask(ScheduledExecutorService service, NPC npc) {
+        NpcMoveTask(ScheduledExecutorService service, NPC npc, Optional<Session> session) {
             this.service = service;
             this.npc = npc;
+            this.session = session;
         }
 
         @Override
@@ -385,6 +438,13 @@ public class Level {
             Direction nextMove = npc.nextMove();
             if (nextMove != null) {
                 move(npc, nextMove);
+
+                if(session.isPresent()) {
+                    Action npcMoveAction = session.get().enterAction("npc-movement-" + npc.getID());
+                    npcMoveAction.reportValue("x-movement", nextMove.getDeltaX())
+                                 .reportValue("y-movement", nextMove.getDeltaY())
+                                 .leaveAction();
+                }
             }
             long interval = npc.getInterval();
             service.schedule(this, interval, TimeUnit.MILLISECONDS);
