@@ -16,6 +16,11 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public class PacManUiBuilder {
 
     /**
+     * Caption for the default Exit button.
+     */
+    private static final String EXIT_CAPTION = "Exit";
+
+    /**
      * Caption for the default stop button.
      */
     private static final String STOP_CAPTION = "Stop";
@@ -67,8 +72,22 @@ public class PacManUiBuilder {
         if (defaultButtons) {
             addStartButton(game);
             addStopButton(game);
+            addExitButton(game);
         }
         return new PacManUI(game, buttons, keyMappings, scoreFormatter);
+    }
+
+    /**
+     * Adds a button with the caption {@value #EXIT_CAPTION} that exits the
+     * game.
+     *
+     * @param game
+     *            The game to exit.
+     */
+    private void addExitButton(final Game game) {
+        assert game != null;
+
+        buttons.put(EXIT_CAPTION, game::exit);
     }
 
     /**
@@ -142,6 +161,7 @@ public class PacManUiBuilder {
         defaultButtons = true;
         buttons.put(START_CAPTION, null);
         buttons.put(STOP_CAPTION, null);
+        buttons.put(EXIT_CAPTION, null);
         return this;
     }
 

@@ -33,7 +33,7 @@ class BoardPanel extends JPanel {
      * The size (in pixels) of a square on the board. The initial size of this
      * panel will scale to fit a board with square of this size.
      */
-    private static final int SQUARE_SIZE = 16;
+    private static final int SQUARE_SIZE = 24;
 
     /**
      * The game to display.

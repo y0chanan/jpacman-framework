@@ -60,6 +60,14 @@ public abstract class Game implements LevelObserver {
         }
     }
 
+    public void exit() {
+        synchronized (progressLock) {
+            if (!isInProgress()) {
+                System.exit(0);
+            }
+        }
+    }
+
     /**
      * @return <code>true</code> iff the game is started and in progress.
      */
