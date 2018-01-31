@@ -13,8 +13,13 @@ import nl.tudelft.jpacman.board.Board;
 import nl.tudelft.jpacman.board.Direction;
 import nl.tudelft.jpacman.board.Square;
 import nl.tudelft.jpacman.board.Unit;
+import nl.tudelft.jpacman.net.HttpRequestUtil;
+import nl.tudelft.jpacman.net.HttpResponse;
 import nl.tudelft.jpacman.npc.NPC;
+import nl.tudelft.jpacman.ui.PacManUI;
 import org.checkerframework.checker.nullness.qual.Nullable;
+
+import org.json.JSONObject;
 
 /**
  * A level of Pac-Man. A level consists of the board with the players and the
@@ -318,16 +323,33 @@ public class Level {
     void reportGameEnd(String type){
 
         int currentScore = -1;
+        String playerID = "";
         if(players.size() > 0 && players.get(0) != null) {
+            playerID = players.get(0).getID();
             currentScore = players.get(0).getScore();//currently there is only SinglePlayerGame
         }
+
+        JSONObject obj = new JSONObject();
+
+        obj.put("player", playerID);
+        obj.put("score", currentScore);
+
+        String postmanURL = "https://postman-echo.com/post";
+        HttpRequestUtil httpRequest = new HttpRequestUtil(postmanURL);
+        HttpResponse response = httpRequest.makePostRequest(obj);
 
         Session gameSession = sessions.get("game");
         if(gameSession != null) {
             Action a = gameSession.enterAction("gameplay")
                                   .reportEvent(type)
-                                  .reportValue("score", currentScore)
-                                  .leaveAction();
+                                  .reportValue("score", currentScore);
+            a.traceWebRequest(postmanURL)
+                .setBytesReceived(response.getBytesReceived())
+                .setBytesSent(response.getBytesSent())
+                .setResponseCode(response.getResponseCode())
+                .stop();
+            a.leaveAction();
+
         }
 
         for(final Session session : sessions.values())
@@ -335,6 +357,8 @@ public class Level {
             session.end();
         }
         sessions.clear();
+
+        PacManUI.displayScoreDialog(currentScore, currentScore);
     }
 
 

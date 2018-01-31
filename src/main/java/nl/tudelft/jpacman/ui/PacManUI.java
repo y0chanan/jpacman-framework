@@ -7,13 +7,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.WindowConstants;
+import javax.swing.*;
 
 import nl.tudelft.jpacman.game.Game;
 import nl.tudelft.jpacman.ui.ScorePanel.ScoreFormatter;
 import org.checkerframework.checker.nullness.qual.Nullable;
+
+import static javax.swing.JOptionPane.INFORMATION_MESSAGE;
 
 /**
  * The default JPacMan UI frame. The PacManUI consists of the following
@@ -114,5 +114,20 @@ public class PacManUI extends JFrame {
     private void nextFrame() {
         boardPanel.repaint();
         scorePanel.refresh();
+    }
+
+    /**
+     * Display a dialog with current score and highscore
+     * @param score the score of the current game
+     * @param highscore the highscore
+     */
+    static public void displayScoreDialog(int score, int highscore){
+        JOptionPane.showMessageDialog(
+            null,
+            "You reached a score of " + score + ".\nCurrent highscore is " + highscore,
+            "Score",
+            INFORMATION_MESSAGE,
+            null
+        );
     }
 }
