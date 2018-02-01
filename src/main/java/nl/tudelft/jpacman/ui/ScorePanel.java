@@ -53,7 +53,7 @@ public class ScorePanel extends JPanel {
         setLayout(new GridLayout(2, players.size()));
 
         for (int i = 1; i <= players.size(); i++) {
-            add(new JLabel("Player " + i, JLabel.CENTER));
+            add(new JLabel("Player " + i +": " + players.get(i - 1).getID(), JLabel.CENTER));
         }
         scoreLabels = new LinkedHashMap<>();
         for (Player player : players) {

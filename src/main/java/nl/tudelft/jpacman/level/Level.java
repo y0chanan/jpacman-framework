@@ -110,6 +110,7 @@ public class Level {
 
         if(openKit.isPresent()) {
             Session gameSession = openKit.get().createSession("");
+            gameSession.identifyUser("game logic");
             sessions.put("game", gameSession);
 
             Session playerSession = openKit.get().createSession("");
@@ -179,7 +180,7 @@ public class Level {
 
         Session playerSession = sessions.get("player");
         if(playerSession != null) {
-            playerSession.identifyUser(player.toString());
+            playerSession.identifyUser(player.getID());
         }
 
     }

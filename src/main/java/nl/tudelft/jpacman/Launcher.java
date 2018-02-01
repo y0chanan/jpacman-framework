@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.security.CodeSource;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
 import com.dynatrace.openkit.DynatraceOpenKitBuilder;
 import com.dynatrace.openkit.api.OpenKit;
@@ -25,10 +23,10 @@ import nl.tudelft.jpacman.sprite.PacManSprites;
 import nl.tudelft.jpacman.ui.Action;
 import nl.tudelft.jpacman.ui.PacManUI;
 import nl.tudelft.jpacman.ui.PacManUiBuilder;
+import org.apache.commons.cli.*;
 import org.checkerframework.checker.nullness.qual.EnsuresNonNull;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.checkerframework.checker.nullness.qual.RequiresNonNull;
-
 /**
  * Creates and launches the JPacMan UI.
  * 
@@ -240,6 +238,155 @@ public class Launcher {
     }
 
     /**
+     * Parse command line arguments and store in HashMap
+     * @param args the command line arguments
+     * @return the parsed command line arguments
+     */
+    public static Map<String, String> parseCommandLine(String[] args){
+        Options options = new Options();
+
+        Option applicationId = new Option("a", "applicationid", true, "application id");
+        applicationId.setRequired(false);
+        options.addOption(applicationId);
+
+        Option deviceId = new Option("d", "deviceid", true, "device id");
+        deviceId.setRequired(false);
+        options.addOption(deviceId);
+
+        Option beaconURL = new Option("b", "beaconurl", true, "beacon url");
+        beaconURL.setRequired(false);
+        options.addOption(beaconURL);
+
+        Option playerName = new Option("p", "player", true, "player name");
+        playerName.setRequired(false);
+        options.addOption(playerName);
+
+        CommandLineParser parser = new BasicParser();
+        CommandLine cmd;
+
+        try {
+            cmd = parser.parse(options, args);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+
+            return new HashMap<>();
+        }
+
+        Map<String, String> commandLineArguments = new HashMap<>();
+
+        String value =  cmd.getOptionValue("applicationid");
+        if(value!=null && !value.isEmpty()) {
+            commandLineArguments.put("applicationID", value);
+        }
+
+        value = cmd.getOptionValue("deviceid");
+        if(value!=null && !value.isEmpty()) {
+            commandLineArguments.put("deviceID", value);
+        }
+
+        value = cmd.getOptionValue("beaconurl");
+        if(value!=null && !value.isEmpty()) {
+            commandLineArguments.put("beaconURL", value);
+        }
+
+        value = cmd.getOptionValue("player");
+        if(value!=null && !value.isEmpty()) {
+            commandLineArguments.put("player", value);
+        }
+
+        return commandLineArguments;
+    }
+
+    /**
+     * Read configuration from properties file
+     * @return A HashMap with the configuration values successfully read from the properties file
+     */
+    public static Map<String, String> readFromPropertiesFile(){
+
+        String endpointURL = "";
+        String applicationID = "";
+        String deviceID = "";
+
+        try {
+            CodeSource source = Launcher.class.getProtectionDomain().getCodeSource();
+            if(source!= null) {
+                URL file = new URL(source.getLocation(), "dynatrace.properties");
+
+
+                Properties properties = new Properties();
+                InputStream in = file.openStream();
+                properties.load(in);
+                in.close();
+
+                if(properties.containsKey("beacon_url")) {
+                    String prop = properties.getProperty("beacon_url");
+                    if (prop != null && !prop.isEmpty()) {
+                        endpointURL = prop;
+                    }
+                }
+
+                if(properties.containsKey("application_id")) {
+                    String prop = properties.getProperty("application_id");
+                    if (prop != null && !prop.isEmpty()) {
+                        applicationID = prop;
+                    }
+                }
+
+                if(properties.containsKey("device_id")) {
+                    String prop = properties.getProperty("device_id");
+                    if (prop != null && !prop.isEmpty()) {
+                        deviceID = prop;
+                    }
+                }
+            }
+
+        }
+        catch(Exception e) {
+            System.err.println("dynatrace.properties file not found in classpath");
+        }
+
+        Map<String, String> propertiesFile = new HashMap<>();
+
+        propertiesFile.put("applicationID", applicationID);
+        propertiesFile.put("deviceID", deviceID);
+        propertiesFile.put("beaconURL", endpointURL);
+
+        return propertiesFile;
+    }
+
+    /**
+     * Obtain a property from either command line or properties file
+     * NOTE: If both command line and properties file are available command line
+     *       is preferred over properties file
+     * NOTE: In case a value is not found in either properties file or command
+     *       line arguments a reasonable default is returned.
+     * @param property Name of the property
+     * @param properties Map created from property file
+     * @param commandLine Map created from command line
+     * @return String containing the requested property
+     */
+    public static String returnValueFromConfigOrDefault(String property, Map<String, String> properties, Map<String,String> commandLine) {
+        String configValue;
+
+        if(commandLine.containsKey(property)) {
+            configValue = commandLine.get(property);
+            if(configValue!=null && configValue.length() > 0) {
+                return configValue;
+            }
+        }
+
+        if(properties.containsKey(property)) {
+            configValue = properties.get(property);
+            if(configValue!=null && configValue.length() > 0) {
+                return configValue;
+            }
+        }
+
+        return "";
+    }
+
+
+    /**
      * Main execution method for the Launcher.
      *
      * @param args
@@ -249,39 +396,32 @@ public class Launcher {
      */
     public static void main(String[] args) {
 
-        String endpointURL = "";
-        String applicationID = "";
-        long deviceID = 0;
-        try {
-            CodeSource source = Launcher.class.getProtectionDomain().getCodeSource();
-            if(source!= null) {
-                URL propertiesFile = new URL(source.getLocation(), "dynatrace.properties");
+        Map<String,String> commandLine = parseCommandLine(args);
+        Map<String,String> propertiesFile = readFromPropertiesFile();
 
+        String endpointURL = returnValueFromConfigOrDefault("beaconURL",
+            propertiesFile,
+            commandLine);
 
-                Properties properties = new Properties();
-                InputStream in = propertiesFile.openStream();
-                properties.load(in);
-                in.close();
+        String applicationID = returnValueFromConfigOrDefault("applicationID",
+            propertiesFile,
+            commandLine);
 
-                String prop = properties.getProperty("beacon_url");
-                if (prop != null && !prop.isEmpty()) {
-                    endpointURL = prop;
-                }
+        String device = returnValueFromConfigOrDefault("deviceID",
+            propertiesFile,
+            commandLine);
+        long deviceID = Long.parseLong(device);
 
-                prop = properties.getProperty("application_id");
-                if (prop != null && !prop.isEmpty()) {
-                    applicationID = prop;
-                }
-
-                prop = properties.getProperty("device_id");
-                if (prop != null && !prop.isEmpty()) {
-                    deviceID = Long.parseLong(prop);
-                }
+        String player = "";
+        if(commandLine.containsKey("player")) {
+            String configValue = commandLine.get("player");
+            if(configValue!=null && configValue.length() > 0) {
+                player = configValue;
             }
-
         }
-        catch(Exception e) {
-            System.err.println("dynatrace.properties file not found in classpath");
+
+        if(player.length() == 0 ) {
+            player = "default";
         }
 
         System.out.println("got endpoint URL " + endpointURL);
@@ -290,6 +430,6 @@ public class Launcher {
 
         OpenKitConfiguration openKitConfig = new OpenKitConfiguration(endpointURL, applicationID, deviceID);
 
-        new Launcher().launch(openKitConfig, "player");
+        new Launcher().launch(openKitConfig, player);
     }
 }
