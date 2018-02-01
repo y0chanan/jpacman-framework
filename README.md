@@ -1,5 +1,3 @@
-![build status](https://travis-ci.org/SERG-Delft/jpacman-framework.svg?branch=master)
-
 JPacman-Framework
 =================
 
@@ -28,12 +26,12 @@ Getting Started
 ---------------
 
 1. Git clone the project
-2. If you use Eclipse:
-	1. Import
-	2. Right Click -> Configure -> Convert to Maven Project
-3. To see JPacman in action: run `nl.tudelft.jpacman.Launcher`.  From the
-command line, run
-```java -classpath target/jpacman-framework-7.0.0-SNAPSHOT.jar nl.tudelft.jpacman.Launcher```
-4. To run the test suite in maven: `mvn test`
-5. To run the test suite in Eclipse: right click -> run as -> JUnit Test.
-	 
+2. Import maven dependency OpenKit:
+    1. Run install-openkit.bat in top folder
+3. Provide dynatrace.properties file in ./target/ folder where the .jar
+   is already located
+4. If you use IDEA:
+	1. File -> New
+    2. Project from Existing Sources
+    3. Navigate to pom file -> OK
+5. To see JPacman in action: run `java -jar target/jpacman-framework-7.0.0.jar`.
