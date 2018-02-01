@@ -1,6 +1,6 @@
 package nl.tudelft.jpacman.net;
 
-import org.json.JSONObject;
+/*import org.json.JSONObject;*/
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -9,7 +9,6 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
-import java.util.Scanner;
 
 /**
  * Utility class to make http post/get requests
@@ -35,7 +34,7 @@ public class HttpRequestUtil {
      * @param jsonData payload of the webrequest
      * @return HttpResponse object containg response code and transmitted bytes
      */
-    public HttpResponse makePostRequest(JSONObject jsonData) {
+    public HttpResponse makePostRequest(String jsonData) {
         int bytesSent = jsonData.length();
         int responseCode = -1;
         int bytesReceived = -1;
@@ -51,7 +50,7 @@ public class HttpRequestUtil {
             // Writing the post data to the HTTP request body
             BufferedWriter httpRequestBodyWriter =
                 new BufferedWriter(new OutputStreamWriter(urlConnection.getOutputStream()));
-            httpRequestBodyWriter.write(jsonData.toString());
+            httpRequestBodyWriter.write(jsonData);
 
             httpRequestBodyWriter.close();
 
@@ -59,13 +58,11 @@ public class HttpRequestUtil {
             responseCode = urlConnection.getResponseCode();
             bytesReceived = urlConnection.getResponseMessage().length();
 
-            Scanner httpResponseScanner = new Scanner(urlConnection.getInputStream());
-            while (httpResponseScanner.hasNextLine())
-
-            {
+            /*Scanner httpResponseScanner = new Scanner(urlConnection.getInputStream());
+            while (httpResponseScanner.hasNextLine()) {
                 System.out.println(httpResponseScanner.nextLine());
             }
-            httpResponseScanner.close();
+            httpResponseScanner.close();*/
         }
         catch(MalformedURLException me)
         {

@@ -19,7 +19,7 @@ import nl.tudelft.jpacman.npc.NPC;
 import nl.tudelft.jpacman.ui.PacManUI;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import org.json.JSONObject;
+/*import org.json.JSONObject;*/
 
 /**
  * A level of Pac-Man. A level consists of the board with the players and the
@@ -329,10 +329,18 @@ public class Level {
             currentScore = players.get(0).getScore();//currently there is only SinglePlayerGame
         }
 
-        JSONObject obj = new JSONObject();
+        /*JSONObject obj = new JSONObject();
 
         obj.put("player", playerID);
         obj.put("score", currentScore);
+         */
+        /* to avoid json dependency use hardcoded json compliant value*/
+        String obj = "{\n" +
+                     "\t\"score\": {\n" +
+                     "\t\t\"name\": \"player\",\n" +
+                     "\t\t\"value\": "+ currentScore +"\n" +
+                     "\t}\n" +
+                     "}";
 
         String postmanURL = "https://postman-echo.com/post";
         HttpRequestUtil httpRequest = new HttpRequestUtil(postmanURL);
