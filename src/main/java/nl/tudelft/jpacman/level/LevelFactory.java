@@ -72,18 +72,15 @@ public class LevelFactory {
      *            A list of all ghosts on the board.
      * @param startPositions
      *            A list of squares from which players may start the game.
-     * @param openKit
-     *            OpenKit instance used to monitor application. Can be Optional.empty()
      * @return A new level for the board.
      */
     public Level createLevel(Board board, List<NPC> ghosts,
-                             List<Square> startPositions,
-                             Optional<OpenKit> openKit) {
+                             List<Square> startPositions) {
 
         // We'll adopt the simple collision map for now.
         CollisionMap collisionMap = new PlayerCollisions();
 
-        return new Level(board, ghosts, startPositions, collisionMap, openKit);
+        return new Level(board, ghosts, startPositions, collisionMap);
     }
 
     /**

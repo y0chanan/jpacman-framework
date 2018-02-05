@@ -7,8 +7,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.dynatrace.openkit.api.Action;
-import com.dynatrace.openkit.api.OpenKit;
 import com.dynatrace.openkit.api.Session;
+import nl.tudelft.jpacman.OpenKitSingleton;
 import nl.tudelft.jpacman.board.Board;
 import nl.tudelft.jpacman.board.Direction;
 import nl.tudelft.jpacman.board.Square;
@@ -18,6 +18,7 @@ import nl.tudelft.jpacman.net.HttpResponse;
 import nl.tudelft.jpacman.npc.NPC;
 import nl.tudelft.jpacman.ui.PacManUI;
 import org.checkerframework.checker.nullness.qual.Nullable;
+
 
 /*import org.json.JSONObject;*/
 
@@ -50,9 +51,6 @@ public class Level {
      * The NPCs of this level and, if they are running, their schedules.
      */
     private final Map<NPC, @Nullable ScheduledExecutorService> npcs;
-
-    private final Optional<OpenKit> openKit;
-    private Map<String, Session> sessions;
 
     /**
      * <code>true</code> iff this level is currently in progress, i.e. players
@@ -96,39 +94,18 @@ public class Level {
      *            The squares on which players start on this board.
      * @param collisionMap
      *            The collection of collisions that should be handled.
-     * @param openKit
-     *            The OpenKit instance to monitor the application, can be Optional.empty()
      */
     public Level(Board board, List<NPC> ghosts, List<Square> startPositions,
-                 CollisionMap collisionMap, Optional<OpenKit> openKit) {
+                 CollisionMap collisionMap) {
         assert board != null;
         assert ghosts != null;
         assert startPositions != null;
-
-        this.openKit = openKit;
-        this.sessions = new HashMap<>();
-
-        if(openKit.isPresent()) {
-            Session gameSession = openKit.get().createSession("");
-            gameSession.identifyUser("game logic");
-            sessions.put("game", gameSession);
-
-            Session playerSession = openKit.get().createSession("");
-            sessions.put("player", playerSession);
-        }
 
         this.board = board;
         this.inProgress = false;
         this.npcs = new HashMap<>();
         for (NPC ghost : ghosts) {
             npcs.put(ghost, null);
-            if(openKit.isPresent()) {
-                String id = "npc-" + ghost.getID();
-                Session npcSession = openKit.get().createSession("");
-                sessions.put(id, npcSession);
-
-                npcSession.identifyUser(id);
-            }
         }
         this.startSquares = startPositions;
         this.startSquareIndex = 0;
@@ -177,12 +154,6 @@ public class Level {
         player.occupy(square);
         startSquareIndex++;
         startSquareIndex %= startSquares.size();
-
-        Session playerSession = sessions.get("player");
-        if(playerSession != null) {
-            playerSession.identifyUser(player.getID());
-        }
-
     }
 
     /**
@@ -220,14 +191,14 @@ public class Level {
             if (destination.isAccessibleTo(unit)) {
                 List<Unit> occupants = destination.getOccupants();
                 unit.occupy(destination);
+
                 for (Unit occupant : occupants) {
                     collisions.collide(unit, occupant);
                 }
             }
             updateObservers();
-
-            Session playerSession = sessions.get("player");
-            if(playerSession != null) {
+            if(OpenKitSingleton.getInstance().isValid()){
+                Session playerSession = OpenKitSingleton.getInstance().getPlayerSession();
                 Action moveAction = playerSession.enterAction("movement");
 
                 if(moveAction != null) {
@@ -252,8 +223,8 @@ public class Level {
             inProgress = true;
             updateObservers();
 
-            Session gameSession = sessions.get("game");
-            if(gameSession != null) {
+            if(OpenKitSingleton.getInstance().isValid()){
+                Session gameSession = OpenKitSingleton.getInstance().getGameSession();
                 Action a = gameSession.enterAction("gameplay").reportEvent("start game");
                 a.leaveAction();
             }
@@ -280,15 +251,7 @@ public class Level {
     private void startNPCs() {
         for (final NPC npc : npcs.keySet()) {
             ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
-
-            String npcId = "npc-" + npc.getID();
-            Optional<Session> session = Optional.empty();
-            Session npcSession = sessions.get(npcId);
-            if(npcSession != null)
-            {
-                session = Optional.of(npcSession);
-            }
-            service.schedule(new NpcMoveTask(service, npc, session),
+            service.schedule(new NpcMoveTask(service, npc),
                 npc.getInterval() / 2, TimeUnit.MILLISECONDS);
 
             npcs.put(npc, service);
@@ -347,12 +310,13 @@ public class Level {
         HttpRequestUtil httpRequest = new HttpRequestUtil(postmanURL);
         HttpResponse response = httpRequest.makePostRequest(obj);
 
-        Session gameSession = sessions.get("game");
-        if(gameSession != null) {
+        if(OpenKitSingleton.getInstance().isValid()){
+            Session gameSession = OpenKitSingleton.getInstance().getGameSession();
             Action a = gameSession.enterAction("gameplay")
                                   .reportEvent(type)
                                   .reportValue("score", currentScore);
             a.traceWebRequest(postmanURL)
+                .start()
                 .setBytesReceived(response.getBytesReceived())
                 .setBytesSent(response.getBytesSent())
                 .setResponseCode(response.getResponseCode())
@@ -361,11 +325,7 @@ public class Level {
 
         }
 
-        for(final Session session : sessions.values())
-        {
-            session.end();
-        }
-        sessions.clear();
+        OpenKitSingleton.getInstance().clearSessions();
 
         PacManUI.displayScoreDialog(currentScore, currentScore);
     }
@@ -446,24 +406,16 @@ public class Level {
         private final NPC npc;
 
         /**
-         * OpenKit session
-         */
-        private final Optional<Session> session;
-
-        /**
          * Creates a new task.
          *
          * @param service
          *            The service that executes the task.
          * @param npc
          *            The NPC to move.
-         * @param session
-         *            OpenKit session to monitor npc behavior
          */
-        NpcMoveTask(ScheduledExecutorService service, NPC npc, Optional<Session> session) {
+        NpcMoveTask(ScheduledExecutorService service, NPC npc) {
             this.service = service;
             this.npc = npc;
-            this.session = session;
         }
 
         @Override
@@ -472,8 +424,11 @@ public class Level {
             if (nextMove != null) {
                 move(npc, nextMove);
 
-                if(session.isPresent()) {
-                    Action npcMoveAction = session.get().enterAction("npc-movement-" + npc.getID());
+                if(OpenKitSingleton.getInstance().isValid()){
+                    String npcId = "npc-" + npc.getID();
+                    Session npcSession = OpenKitSingleton.getInstance().getNonPlayerCharacterSession(npcId);
+
+                    Action npcMoveAction = npcSession.enterAction("npc-movement-" + npc.getID());
                     npcMoveAction.reportValue("x-movement", nextMove.getDeltaX())
                                  .reportValue("y-movement", nextMove.getDeltaY())
                                  .leaveAction();

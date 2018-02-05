@@ -76,16 +76,14 @@ public class Launcher {
     /**
      * Creates a new game using the level from {@link #makeLevel()}.
      *
-     * @param openKit
-     *              Open Kit instance to monitor the application
      * @param playerId
      *              The player's name
      * @return a new Game.
      */
     @EnsuresNonNull("game")
-    public Game makeGame(Optional<OpenKit> openKit, String playerId) {
+    public Game makeGame(String playerId) {
         GameFactory gf = getGameFactory();
-        Level level = makeLevel(openKit);
+        Level level = makeLevel();
         game = gf.createSinglePlayerGame(level, playerId);
         return game;
     }
@@ -96,9 +94,9 @@ public class Launcher {
      *
      * @return A new level.
      */
-    public Level makeLevel(Optional<OpenKit> openKit) {
+    public Level makeLevel() {
         try {
-            return getMapParser(openKit).parseMap(getLevelMap());
+            return getMapParser().parseMap(getLevelMap());
         } catch (IOException e) {
             throw new PacmanConfigurationException(
                     "Unable to create level, name = " + getLevelMap(), e);
@@ -109,8 +107,8 @@ public class Launcher {
      * @return A new map parser object using the factories from
      *         {@link #getLevelFactory()} and {@link #getBoardFactory()}.
      */
-    protected MapParser getMapParser(Optional<OpenKit> openKit) {
-        return new MapParser(getLevelFactory(), getBoardFactory(), openKit);
+    protected MapParser getMapParser() {
+        return new MapParser(getLevelFactory(), getBoardFactory());
     }
 
     /**
@@ -158,23 +156,6 @@ public class Launcher {
     }
 
     /**
-     * Create a new OpenKit instance from the given configuration parameters
-     * @param configuration OpenKit instance
-     */
-    protected OpenKit getOpenKit(OpenKitConfiguration configuration)
-    {
-        OpenKit openKit = new DynatraceOpenKitBuilder(
-            configuration.getBeaconURL(),
-            configuration.getApplicationID(),
-            configuration.getDeviceID())
-            .withApplicationName("Pacman JAVA")
-            .withApplicationVersion("7.0.0")
-            .build();
-
-        return openKit;
-    }
-
-    /**
      * Adds key events UP, DOWN, LEFT and RIGHT to a game.
      *
      * @param builder
@@ -205,20 +186,13 @@ public class Launcher {
     /**
      * Creates and starts a JPac-Man game.
      *
-     * @param configuration
-     *                  OpenKit configuration to use
      * @param playerId
      *                  The player's name
      *
      */
     @EnsuresNonNull("game")
-    public void launch(OpenKitConfiguration configuration, String playerId) {
-        Optional<OpenKit> openKit = Optional.empty();
-        if(configuration.isValid()) {
-            openKit = Optional.of(getOpenKit(configuration));
-        }
-
-        makeGame(openKit, playerId);
+    public void launch(String playerId) {
+        makeGame(playerId);
 
         PacManUiBuilder builder = new PacManUiBuilder().withDefaultButtons();
         addSinglePlayerKeys(builder);
@@ -429,7 +403,7 @@ public class Launcher {
         System.out.println("got device ID " + deviceID);
 
         OpenKitConfiguration openKitConfig = new OpenKitConfiguration(endpointURL, applicationID, deviceID);
-
-        new Launcher().launch(openKitConfig, player);
+        OpenKitSingleton.getInstance().initialize(openKitConfig, player);
+        new Launcher().launch(player);
     }
 }

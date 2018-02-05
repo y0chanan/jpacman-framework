@@ -75,7 +75,7 @@ class LevelTest {
         when(mockSession.enterAction(anyString())).thenReturn(mockAction);
         when(mockAction.reportEvent(anyString())).thenReturn(mockAction);
         level = new Level(board, Lists.newArrayList(ghost), Lists.newArrayList(
-            square1, square2), collisions, Optional.of(mockOpenKit));
+            square1, square2), collisions);
         when(ghost.getInterval()).thenReturn(defaultInterval);
     }
 

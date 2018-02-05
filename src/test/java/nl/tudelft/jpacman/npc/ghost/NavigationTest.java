@@ -52,7 +52,7 @@ class NavigationTest {
         Session sessionMock = mock(Session.class);
         when(openKit.createSession(anyString())).thenReturn(sessionMock);
         parser = new MapParser(new LevelFactory(sprites, new GhostFactory(
-            sprites)), new BoardFactory(sprites), Optional.empty());
+            sprites)), new BoardFactory(sprites));
     }
 
     /**

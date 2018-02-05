@@ -31,7 +31,6 @@ public class MapParser {
      * The factory that creates the squares and board.
      */
     private final BoardFactory boardCreator;
-    private final Optional<OpenKit> openKit;
 
     /**
      * Creates a new map parser.
@@ -40,13 +39,10 @@ public class MapParser {
      *            The factory providing the NPC objects and the level.
      * @param boardFactory
      *            The factory providing the Square objects and the board.
-     * @param openKit
-     *            OpenKit instance used to monitor application. Can be Optional.empty()
      */
-    public MapParser(LevelFactory levelFactory, BoardFactory boardFactory, Optional<OpenKit> openKit) {
+    public MapParser(LevelFactory levelFactory, BoardFactory boardFactory) {
         this.levelCreator = levelFactory;
         this.boardCreator = boardFactory;
-        this.openKit = openKit;
     }
 
     /**
@@ -78,7 +74,7 @@ public class MapParser {
         makeGrid(map, width, height, grid, ghosts, startPositions);
 
         Board board = boardCreator.createBoard(grid);
-        return levelCreator.createLevel(board, ghosts, startPositions, openKit);
+        return levelCreator.createLevel(board, ghosts, startPositions);
     }
 
     private void makeGrid(char[][] map, int width, int height,
