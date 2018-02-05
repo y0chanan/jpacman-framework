@@ -2,6 +2,8 @@ package nl.tudelft.jpacman.level;
 
 import java.util.Map;
 
+import com.dynatrace.openkit.api.Session;
+import nl.tudelft.jpacman.OpenKitSingleton;
 import nl.tudelft.jpacman.board.Direction;
 import nl.tudelft.jpacman.board.Unit;
 import nl.tudelft.jpacman.sprite.AnimatedSprite;
@@ -72,6 +74,14 @@ public class Player extends Unit {
         }
         if (!isAlive) {
             deathSprite.restart();
+
+            OpenKitSingleton openKit = OpenKitSingleton.getInstance();
+            if(openKit.isValid()) {
+                Session gameSession = openKit.getGameSession();
+                gameSession.enterAction("gameplay")
+                           .reportEvent("npc hit the player")
+                           .leaveAction();
+            }
         }
         this.alive = isAlive;
     }
