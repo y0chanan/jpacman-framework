@@ -7,8 +7,6 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.util.*;
 
-import com.dynatrace.openkit.DynatraceOpenKitBuilder;
-import com.dynatrace.openkit.api.OpenKit;
 import nl.tudelft.jpacman.board.BoardFactory;
 import nl.tudelft.jpacman.board.Direction;
 import nl.tudelft.jpacman.game.Game;
