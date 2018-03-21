@@ -88,23 +88,6 @@ public class OpenKitSingleton {
     }
 
     /**
-     * Return the session used for game actions/events
-      * @return Session for game actions/events
-     */
-    public Session getGameSession(){
-        synchronized (syncObject) {
-            if (sessions.containsKey("game")) {
-                return sessions.get("game");
-            }
-            Session newGameSession = openKit.get().createSession("");
-            sessions.put("game", newGameSession);
-            newGameSession.identifyUser("game");
-
-            return newGameSession;
-        }
-    }
-
-    /**
      * Return the session used for player actions/events
      * @return Session for player actions/events
      */

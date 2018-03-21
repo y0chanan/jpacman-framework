@@ -77,8 +77,8 @@ public class Player extends Unit {
 
             OpenKitSingleton openKit = OpenKitSingleton.getInstance();
             if(openKit.isValid()) {
-                Session gameSession = openKit.getGameSession();
-                gameSession.enterAction("gameplay")
+                Session playerSession = openKit.getPlayerSession();
+                playerSession.enterAction("game")
                            .reportEvent("npc hit the player")
                            .leaveAction();
             }

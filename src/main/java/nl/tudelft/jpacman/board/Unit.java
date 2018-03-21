@@ -108,8 +108,8 @@ public abstract class Unit {
 
             OpenKitSingleton openKit = OpenKitSingleton.getInstance();
             if(openKit.isValid()){
-                Session gameSession = openKit.getGameSession();
-                gameSession.enterAction("gameplay")
+                Session playerSession = openKit.getPlayerSession();
+                playerSession.enterAction("user")
                            .reportEvent("player has eaten pellet")
                            .leaveAction();
             }

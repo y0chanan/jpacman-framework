@@ -224,8 +224,8 @@ public class Level {
             updateObservers();
 
             if(OpenKitSingleton.getInstance().isValid()){
-                Session gameSession = OpenKitSingleton.getInstance().getGameSession();
-                Action a = gameSession.enterAction("gameplay").reportEvent("start game");
+                Session playerSession = OpenKitSingleton.getInstance().getPlayerSession();
+                Action a = playerSession.enterAction("game").reportEvent("start game");
                 a.leaveAction();
             }
         }
@@ -311,8 +311,8 @@ public class Level {
         HttpResponse response = httpRequest.makePostRequest(obj);
 
         if(OpenKitSingleton.getInstance().isValid()){
-            Session gameSession = OpenKitSingleton.getInstance().getGameSession();
-            Action a = gameSession.enterAction("gameplay")
+            Session playerSession = OpenKitSingleton.getInstance().getPlayerSession();
+            Action a = playerSession.enterAction("game")
                                   .reportEvent(type)
                                   .reportValue("score", currentScore);
             a.traceWebRequest(postmanURL)
