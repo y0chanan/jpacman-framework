@@ -6,9 +6,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import com.dynatrace.openkit.api.OpenKit;
+import nl.tudelft.jpacman.GameModeSingleton;
 import nl.tudelft.jpacman.PacmanConfigurationException;
 import nl.tudelft.jpacman.board.Board;
 import nl.tudelft.jpacman.board.BoardFactory;
@@ -138,9 +137,13 @@ public class MapParser {
 
     private Square makeGhostSquare(List<NPC> ghosts) {
         Square ghostSquare = boardCreator.createGround();
-        NPC ghost = levelCreator.createGhost();
-        ghosts.add(ghost);
-        ghost.occupy(ghostSquare);
+
+        GameModeSingleton gameMode = GameModeSingleton.getInstance();
+        if(!gameMode.getDisableNPCs()) {
+            NPC ghost = levelCreator.createGhost();
+            ghosts.add(ghost);
+            ghost.occupy(ghostSquare);
+        }
         return ghostSquare;
     }
 

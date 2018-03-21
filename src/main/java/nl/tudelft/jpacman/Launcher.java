@@ -233,6 +233,10 @@ public class Launcher {
         playerName.setRequired(false);
         options.addOption(playerName);
 
+        Option disableNPCs = new Option("dn", "disable-npc", false, "disable npcs");
+        disableNPCs.setRequired(false);
+        options.addOption(disableNPCs);
+
         CommandLineParser parser = new BasicParser();
         CommandLine cmd;
 
@@ -264,6 +268,10 @@ public class Launcher {
         value = cmd.getOptionValue("player");
         if(value!=null && !value.isEmpty()) {
             commandLineArguments.put("player", value);
+        }
+
+        if(cmd.hasOption("disable-npc")) {
+            commandLineArguments.put("disable-npc", "");
         }
 
         return commandLineArguments;
@@ -402,6 +410,7 @@ public class Launcher {
 
         OpenKitConfiguration openKitConfig = new OpenKitConfiguration(endpointURL, applicationID, deviceID);
         OpenKitSingleton.getInstance().initialize(openKitConfig, player);
+        GameModeSingleton.getInstance().setDisableNPCs(commandLine.containsKey("disable-npc"));
         new Launcher().launch(player);
     }
 }
