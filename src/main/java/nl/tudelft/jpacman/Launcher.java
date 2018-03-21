@@ -237,6 +237,10 @@ public class Launcher {
         disableNPCs.setRequired(false);
         options.addOption(disableNPCs);
 
+        Option bugMode = new Option("o", "buggy", false, "simulate a buggy mode");
+        bugMode.setRequired(false);
+        options.addOption(bugMode);
+
         CommandLineParser parser = new BasicParser();
         CommandLine cmd;
 
@@ -272,6 +276,10 @@ public class Launcher {
 
         if(cmd.hasOption("disable-npc")) {
             commandLineArguments.put("disable-npc", "");
+        }
+
+        if(cmd.hasOption("buggy")) {
+            commandLineArguments.put("buggy", "");
         }
 
         return commandLineArguments;
@@ -362,7 +370,7 @@ public class Launcher {
             }
         }
 
-        return "";
+        return "0";
     }
 
 
@@ -411,6 +419,7 @@ public class Launcher {
         OpenKitConfiguration openKitConfig = new OpenKitConfiguration(endpointURL, applicationID, deviceID);
         OpenKitSingleton.getInstance().initialize(openKitConfig, player);
         GameModeSingleton.getInstance().setDisableNPCs(commandLine.containsKey("disable-npc"));
+        GameModeSingleton.getInstance().setBuggyMode(commandLine.containsKey("buggy"));
         new Launcher().launch(player);
     }
 }

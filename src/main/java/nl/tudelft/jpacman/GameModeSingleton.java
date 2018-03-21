@@ -16,6 +16,11 @@ public class GameModeSingleton {
     private boolean disableNonPlayerCharacters;
 
     /**
+     * flag if the "buggy demo mode" is enabled
+     */
+    private boolean demoBugMode;
+
+    /**
      * sync object to ensure access to methods from one context at a time
      */
     private Object syncObject;
@@ -53,6 +58,26 @@ public class GameModeSingleton {
     public void setDisableNPCs(boolean disableNPCs){
         synchronized (syncObject) {
             disableNonPlayerCharacters = disableNPCs;
+        }
+    }
+
+    /**
+     * Return a flag if NPCs are disabled
+     * @return @code true if NPCs are disabled, @code false if not
+     */
+    public boolean getBuggyMode() {
+        synchronized (syncObject) {
+            return demoBugMode;
+        }
+    }
+
+    /**
+     * Set if NPCs are disabled
+     * @param buggyMode flag if buggy mode is enabled
+     */
+    public void setBuggyMode(boolean buggyMode){
+        synchronized (syncObject) {
+            demoBugMode = buggyMode;
         }
     }
 

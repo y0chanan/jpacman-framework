@@ -1,5 +1,7 @@
 package nl.tudelft.jpacman.level;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
@@ -8,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.dynatrace.openkit.api.Action;
 import com.dynatrace.openkit.api.Session;
+import nl.tudelft.jpacman.GameModeSingleton;
 import nl.tudelft.jpacman.OpenKitSingleton;
 import nl.tudelft.jpacman.board.Board;
 import nl.tudelft.jpacman.board.Direction;
@@ -17,7 +20,9 @@ import nl.tudelft.jpacman.net.HttpRequestUtil;
 import nl.tudelft.jpacman.net.HttpResponse;
 import nl.tudelft.jpacman.npc.NPC;
 import nl.tudelft.jpacman.ui.PacManUI;
+
 import org.checkerframework.checker.nullness.qual.Nullable;
+
 
 
 /*import org.json.JSONObject;*/
@@ -183,6 +188,29 @@ public class Level {
             return;
         }
 
+        Random ran = new Random();
+        if(ran.nextInt(10)==0 && GameModeSingleton.getInstance().getBuggyMode()){
+            int crashing = 0;
+            try {
+                crashing = direction.getDeltaX() / (direction.getDeltaY() -1);
+            } catch(Exception e) {
+                System.out.print("crash: " + crashing + "\n");
+                Session playerSession = OpenKitSingleton.getInstance().getPlayerSession();
+
+                StringWriter sw = new StringWriter();
+                e.printStackTrace(new PrintWriter(sw));
+
+                String errorName = e.getClass().getName();
+                String detailMessage = "";
+                if(e.getMessage() != null){
+                    detailMessage = e.getMessage();
+                }
+                playerSession.reportCrash(errorName, detailMessage, sw.toString());
+                stop();
+                reportGameEnd("crash occured");
+            }
+        }
+
         synchronized (moveLock) {
             unit.setDirection(direction);
             Square location = unit.getSquare();
@@ -199,7 +227,7 @@ public class Level {
             updateObservers();
             if(OpenKitSingleton.getInstance().isValid()){
                 Session playerSession = OpenKitSingleton.getInstance().getPlayerSession();
-                Action moveAction = playerSession.enterAction("movement");
+                Action moveAction = playerSession.enterAction("user");
 
                 if(moveAction != null) {
                     moveAction.reportValue("direction-x", direction.getDeltaX())
@@ -225,7 +253,7 @@ public class Level {
 
             if(OpenKitSingleton.getInstance().isValid()){
                 Session playerSession = OpenKitSingleton.getInstance().getPlayerSession();
-                Action a = playerSession.enterAction("game").reportEvent("start game");
+                Action a = playerSession.enterAction("user").reportEvent("start game");
                 a.leaveAction();
             }
         }
@@ -312,7 +340,7 @@ public class Level {
 
         if(OpenKitSingleton.getInstance().isValid()){
             Session playerSession = OpenKitSingleton.getInstance().getPlayerSession();
-            Action a = playerSession.enterAction("game")
+            Action a = playerSession.enterAction("user")
                                   .reportEvent(type)
                                   .reportValue("score", currentScore);
             a.traceWebRequest(postmanURL)
