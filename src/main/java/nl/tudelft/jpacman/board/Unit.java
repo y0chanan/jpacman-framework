@@ -1,6 +1,6 @@
 package nl.tudelft.jpacman.board;
 
-import com.dynatrace.openkit.api.Session;
+import com.dynatrace.openkit.api.Action;
 import nl.tudelft.jpacman.OpenKitSingleton;
 import nl.tudelft.jpacman.sprite.Sprite;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -104,14 +104,16 @@ public abstract class Unit {
      */
     public void leaveSquare() {
         if (square != null) {
-            square.remove(this);
+            Action eatPelletsAction = null;
+            if(OpenKitSingleton.getInstance().isValid()) {
+                eatPelletsAction = OpenKitSingleton.getInstance().getPlayerSession().enterAction("playerHasEatenPelletAction");
+            }
+            if (square != null) {
+                square.remove(this);
+            }
 
-            OpenKitSingleton openKit = OpenKitSingleton.getInstance();
-            if(openKit.isValid()){
-                Session playerSession = openKit.getPlayerSession();
-                playerSession.enterAction("user")
-                           .reportEvent("player has eaten pellet")
-                           .leaveAction();
+            if(eatPelletsAction != null){
+                eatPelletsAction.reportEvent("player has eaten pellet").leaveAction();
             }
 
             square = null;
